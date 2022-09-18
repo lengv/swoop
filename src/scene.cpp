@@ -1,5 +1,7 @@
+#include <iostream>
 #include "../include/scene.h"
 #include "../include/utils.h"
+#include "../include/laser_error.h"
 
 namespace scene{
 utils::Point Scene::intersect(const utils::Point& origin, const utils::Vector& ray)
@@ -23,6 +25,11 @@ double Scene::laserReturn(const utils::Point& drone_pos)
     else
         height = applyError(height);
 
+    if(height < lidar_min_range)
+        height = -1.0;
+
+    laser_history.push_back(height);
+
     return height;
 }
 
@@ -30,17 +37,35 @@ double Scene::applyError(const double height)
 {
     // int modifier = std::rand();
     // Scene::laserReturn(utils::Point{1,1,5});
+    double new_height;
+    new_height = laser_error::particle_error(height, 0.1, height/2.0, 20);
+    new_height = laser_error::laser_noise(new_height, 0.01, 0.0);
 
-    return height;
+    return new_height;
 }
 
 utils::Point Scene::moveDrone(const utils::Vector& velocity)
 {
-    drone_pos.x = velocity.x;
+    drone_pos.x += velocity.x;
     // this.drone_pos.y = velocity.y;  // Ignore y due to 2D assumption
-    drone_pos.z = velocity.z;
+    drone_pos.z += velocity.z;
+
+    drone_history.push_back(utils::Point(drone_pos));
 
     return drone_pos;
 }
 
+void Scene::print_log()
+{
+    std::cout << "===== Drone pos =====" <<std::endl;
+    for(auto pos : drone_history)
+    {
+        std::cout << pos.x << "," << pos.y << "," << pos.z << std::endl;
+    }
+    std::cout << "===== Laser history =====" <<std::endl;
+    for(auto val : laser_history)
+    {
+        std::cout << val <<std::endl;
+    }
+}
 }
