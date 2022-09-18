@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <fstream>
 
-Drone::Drone(utils::Point pos) : pos(pos) {};
+Drone::Drone(utils::Point pos) : pos(pos) {perceived_height=pos.z;};
 
 double average(const std::vector<double>& vec)
 {
@@ -27,6 +27,8 @@ void Drone::drone_forward(scene::Scene& env, const double target_x, const double
         env.moveDrone(utils::Vector{velocity, 0, 0});
         auto height = env.laserReturn(pos);
         std::cout << "drone_pos.x: " << pos.x << ", height: " << height << std::endl;
+
+        fuse_height(env, 0);
     }
 
     return;
@@ -34,8 +36,8 @@ void Drone::drone_forward(scene::Scene& env, const double target_x, const double
 
 void Drone::drone_land(scene::Scene& env, const double landing_speed, const double landing_height)
 {
-    double remaining_height = pos.z;  // dead reckoning
-    double perceived_height = pos.z;  // EKF like value
+    // double remaining_height = pos.z;  // dead reckoning
+    // double perceived_height = pos.z;  // EKF like value
     double target_landing_speed = landing_speed;
 
     while(perceived_height > 0.01)
@@ -46,23 +48,42 @@ void Drone::drone_land(scene::Scene& env, const double landing_speed, const doub
         }
         pos.z -= target_landing_speed;
         env.moveDrone(utils::Vector{0, 0, -target_landing_speed});  // Track it in the sim
-        remaining_height -= target_landing_speed;
+        // remaining_height -= target_landing_speed;
+        fuse_height(env, target_landing_speed);
+        // auto ls_data = laser_height(env);
+        // double laser_weight = 0.5 * ls_data.second;
+        // perceived_height = remaining_height*(1-laser_weight) + ls_data.first*(laser_weight);
+        // remaining_height = perceived_height;
+        // // std::cout << "drone_pos.z: " << pos.z << ", dist: " << remaining_height << " laser_height: " << ls_data.first <<" perceived_height: " << perceived_height << std::endl;
 
-        auto ls_data = laser_height(env);
-        double laser_weight = 0.5 * ls_data.second;
-        perceived_height = remaining_height*(1-laser_weight) + ls_data.first*(laser_weight);
-        remaining_height = perceived_height;
-        std::cout << "drone_pos.z: " << pos.z << ", dist: " << remaining_height << " laser_height: " << ls_data.first <<" perceived_height: " << perceived_height << std::endl;
-
-        height_history.push_back(remaining_height);
-        perceived_height_history.push_back(perceived_height);
-        laser_height_history.push_back(ls_data.first);
-        velocity_history.push_back(target_landing_speed);
+        // height_history.push_back(remaining_height);
+        // perceived_height_history.push_back(perceived_height);
+        // laser_height_history.push_back(ls_data.first);
+        // velocity_history.push_back(target_landing_speed);
     }
     return;
 }
 
-std::pair<double, double> Drone::laser_height(scene::Scene env)
+void Drone::fuse_height(scene::Scene& env, double velocity_z)
+{
+    auto ls_data = laser_height(env);
+    double height_diff_factor = std::abs(perceived_height - ls_data.first)/perceived_height/2;
+    double laser_weight = 0.5 * (ls_data.second + height_diff_factor);
+
+    if(ls_data.first<0.0)
+        laser_weight = 0;
+    // if(std::abs(perceived_height - ls_data.first) >  )
+    
+
+    height_history.push_back(perceived_height);
+    perceived_height = (perceived_height-velocity_z)*(1-laser_weight) + ls_data.first*(laser_weight);
+    // std::cout << "drone_pos.z: " << pos.z << ", dist: " << remaining_height << " laser_height: " << ls_data.first <<" perceived_height: " << perceived_height << std::endl;
+    perceived_height_history.push_back(perceived_height);
+    laser_height_history.push_back(ls_data.first);
+    velocity_history.push_back(velocity_z);
+}
+
+std::pair<double, double> Drone::laser_height(scene::Scene& env)
 {
     // Get laser returns, simulate multiple returns
     for(size_t laser_itr=0; laser_itr < laser_per_call; ++laser_itr)
@@ -111,13 +132,7 @@ std::pair<double, double> Drone::laser_height(scene::Scene env)
     avgs.resize(clusters.size());    
     std::transform(clusters.begin(), clusters.end(), avgs.begin(), average);
 
-    // if(clusters.size() > 1)
-    //     std::cout << "      laser error detected"  << std::endl;
-
-    // for (auto avg: avgs)
-    // {
-    //     std::cout << "avg: " << avg << std::endl;
-    // }
+    // Confidence is reported as the porportion of data that is valid compared to buffer size
     double confidence;
     if(avgs[largest_ind] == -1)
         confidence=0;

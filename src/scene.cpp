@@ -39,7 +39,7 @@ double Scene::applyError(const double height)
     // int modifier = std::rand();
     // Scene::laserReturn(utils::Point{1,1,5});
     double new_height;
-    new_height = laser_error::particle_error(height, 0.1, height/2.0, 20);
+    new_height = laser_error::particle_error(height, ERROR_RATE, height/2.0, 20);
     new_height = laser_error::laser_noise(new_height, 0.01, 0.0);
 
     return new_height;
@@ -58,7 +58,8 @@ utils::Point Scene::moveDrone(const utils::Vector& velocity)
 
 void Scene::print_log()
 {
-    // std::cout << "===== Drone pos =====" <<std::endl;
+    std::cout << "pos size: " << drone_history.size() << ", laser size: " << laser_history.size() <<std::endl;
+
     std::ofstream logfile;
     logfile.open ("scene_log.txt");
     for(auto pos : drone_history)

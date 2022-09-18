@@ -16,14 +16,17 @@ class Drone
     private:
         size_t max_buffer=10;
         std::vector<double> laser_return_buffer;
-        std::pair<double, double> laser_height(scene::Scene env);
+        std::pair<double, double> laser_height(scene::Scene& env);
         double cluster_proximity=0.1; // closeness of value
         double laser_per_call = 3;
+        double perceived_height;
 
         std::vector<double> height_history;
         std::vector<double> perceived_height_history;
         std::vector<double> laser_height_history;
         std::vector<double> velocity_history;
+
+        void fuse_height(scene::Scene& env, double velocity_z);
 };
 
 #endif

@@ -9,6 +9,7 @@
 #define LANDING_BLOCK_HEIGHT 7.0
 #define LANDING_X 4.5
 #define LIDAR_MIN_RANGE 0.8
+#define ERROR_RATE 0.1
 
 namespace scene{
 class Scene {
