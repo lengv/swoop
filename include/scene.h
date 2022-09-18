@@ -22,7 +22,7 @@ class Scene {
     double min_height=0.0;
     double max_height=20.0;
     double lidar_min_range=LIDAR_MIN_RANGE;
-    utils::Point drone_pos=utils::Point{0,0,0};
+    utils::Point drone_pos=utils::Point{0,0,15};
 
     utils::Point intersect(const utils::Point& origin, const utils::Vector& ray);
     double laserReturn(const utils::Point& drone_pos);

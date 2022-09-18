@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "../include/scene.h"
 #include "../include/utils.h"
 #include "../include/laser_error.h"
@@ -57,15 +58,21 @@ utils::Point Scene::moveDrone(const utils::Vector& velocity)
 
 void Scene::print_log()
 {
-    std::cout << "===== Drone pos =====" <<std::endl;
+    // std::cout << "===== Drone pos =====" <<std::endl;
+    std::ofstream logfile;
+    logfile.open ("scene_log.txt");
     for(auto pos : drone_history)
     {
-        std::cout << pos.x << "," << pos.y << "," << pos.z << std::endl;
+        logfile << pos.x << "," << pos.y << "," << pos.z << std::endl;
     }
-    std::cout << "===== Laser history =====" <<std::endl;
+    logfile.close();
+    std::ofstream logfile_laser;
+    logfile_laser.open ("scene_laser_log.txt");
+    // std::cout << "===== Laser history =====" <<std::endl;
     for(auto val : laser_history)
     {
-        std::cout << val <<std::endl;
+        logfile_laser << val <<std::endl;
     }
+    logfile_laser.close();
 }
 }

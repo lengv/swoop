@@ -4,6 +4,7 @@
 #include <numeric>
 #include <iostream>
 #include <algorithm>
+#include <fstream>
 
 Drone::Drone(utils::Point pos) : pos(pos) {};
 
@@ -17,7 +18,7 @@ bool Longest(const std::vector<double> &A, const std::vector<double> &B)
     return A.size() < B.size();
 }
 
-void Drone::drone_forward(scene::Scene env, const double target_x, const double velocity)
+void Drone::drone_forward(scene::Scene& env, const double target_x, const double velocity)
 {
     while(std::abs(pos.x - target_x) > 0.01)
     {
@@ -31,7 +32,7 @@ void Drone::drone_forward(scene::Scene env, const double target_x, const double 
     return;
 }
 
-void Drone::drone_land(scene::Scene env, const double landing_speed, const double landing_height)
+void Drone::drone_land(scene::Scene& env, const double landing_speed, const double landing_height)
 {
     double remaining_height = pos.z;  // dead reckoning
     double perceived_height = pos.z;  // EKF like value
@@ -128,8 +129,11 @@ std::pair<double, double> Drone::laser_height(scene::Scene env)
 
 void Drone::print_log()
 {
+    std::ofstream logfile;
+    logfile.open("drone_log.txt");
     for(size_t i=0; i < height_history.size(); ++i)
     {
-        std::cout << height_history[i] << "," << perceived_height_history[i] << "," << laser_height_history[i]<< "," << velocity_history[i] << std::endl;
+        logfile << height_history[i] << "," << perceived_height_history[i] << "," << laser_height_history[i]<< "," << velocity_history[i] << std::endl;
     }
+    logfile.close();
 }

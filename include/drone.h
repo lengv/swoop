@@ -10,8 +10,8 @@ class Drone
     public:
         explicit Drone(utils::Point pos);
         utils::Point pos;
-        void drone_forward(scene::Scene env, const double target_x, const double velocity);
-        void drone_land(scene::Scene env, const double landing_speed, const double landing_height);
+        void drone_forward(scene::Scene& env, const double target_x, const double velocity);
+        void drone_land(scene::Scene& env, const double landing_speed, const double landing_height);
         void print_log();
     private:
         size_t max_buffer=10;
