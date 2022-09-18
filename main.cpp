@@ -2,93 +2,60 @@
 #include <random>
 #include <cstdlib>
 #include <assert.h>
+#include <math.h>
+
+#include "include/scene.h"
+#include "include/utils.h"
 
 #define LANDING_HEIGHT 1.5  // Height to initiate landing
-#define FORWARD_SPEED 0.5
-#define LANDING_SPEED 0.5
+#define FORWARD_SPEED 0.2
+#define LANDING_SPEED 0.1
+#define TARGET_X scene::LANDING_X
 
-// scene.h
-
-typedef struct triplet
+utils::Point drone_forward(scene::Scene env, utils::Point& drone_pos, const double target_x, const double velocity)
 {
-    double x;
-    double y;
-    double z;
-} Point;
-
-typedef struct triplet Vector;
-
-typedef struct Box
-{
-    // Simplifying here to make a box a rectangle, raising from the ground
-    Point start;
-    Point end;
-} Box;
-
-
-class Scene {
-  // Assume the scene is only 2D, xz plane
-  public:
-    Scene();
-    explicit Scene(const Box& box);
-
-    double min_dist=-10.0;
-    double max_dist=10.0;
-    double min_height=0.0;
-    double max_height=20.0;
-
-    Point intersect(const Point& origin, const Vector& ray);
-    double laserReturn(const Point& drone_pos);
-    Point moveDrone(const Vector& velocity);
-  private:
-    Vector plane_normal={0,0,1};  // Not useful in the 2D assumption
-    Point plane_point={0,0,0};
-    Box box={Point{5,0,7}, Point{7,0,7}};
-
-    double apply_error(const double height);
-};
-
-// scene.cpp
-
-Point Scene::intersect(const Point& origin, const Vector& ray)
-{
-    // Not useful in 2D assumption
-    Point intersection = {0,0,0};
-    return intersection;
-}
-
-double Scene::laserReturn(const Point& drone_pos)
-{
-    double height = plane_point.z;  // Assume default is the planes height
-    if(box.start.x <= drone_pos.x && drone_pos.x <= box.end.x)
+    while(std::abs(drone_pos.x - target_x) > 0.01)
     {
-        height = box.start.z;
+        double next_vel = std::min(velocity, target_x - drone_pos.x);
+        drone_pos.x += next_vel;
+        auto height = env.laserReturn(drone_pos);
+        std::cout << "drone_pos.x: " << drone_pos.x << ", height: " << height << std::endl;
     }
 
-    return apply_error(height);
+    return drone_pos;
 }
 
-double Scene::apply_error(const double height)
+utils::Point drone_land(scene::Scene env, utils::Point& drone_pos, const double landing_speed, const double landing_height)
 {
-    int modifier = std::rand();
-
-    return height;
+    double remaining_height = drone_pos.z;
+    double target_landing_speed = landing_speed;
+    while(remaining_height > 0.01)
+    {
+        if(remaining_height < landing_height)
+        {
+            target_landing_speed = std::max(remaining_height/landing_height, 0.005);
+        }
+        drone_pos.z -= target_landing_speed;
+        remaining_height -= target_landing_speed;
+        std::cout << "drone_pos.z: " << drone_pos.z << ", dist: " << remaining_height << std::endl;
+    }
+    return drone_pos;
 }
-
-double double_rand() {return static_cast <double> (std::rand()) / static_cast <double> (RAND_MAX);}
-
-
-
-Point Scene::moveDrone(const Vector& velocity)
-{
-
-}
-
-// App
 
 int main(int, char**) {
-    std::cout << "Hello, world!\n";
-    Point p1 = {1,2,3};
-    std::cout << "x: " << p1.x << std::endl;
 
+    auto env = scene::Scene();
+    env.applyError(4);
+    auto r1 = env.laserReturn(utils::Point{2,0,10});
+    auto r2 = env.laserReturn(utils::Point{6,0,10});
+
+    std::cout << "Hello, world!\n";
+
+    std::cout << "r1: " << r1 << " r2: " << r2 << std::endl;
+
+    utils::Point drone_pos{0,0,15};
+    drone_forward(env, drone_pos, LANDING_X, FORWARD_SPEED);
+    drone_land(env, drone_pos, LANDING_SPEED, LANDING_HEIGHT);
+
+    return 0;
 }
