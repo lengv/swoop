@@ -54,6 +54,7 @@ void Drone::drone_land(scene::Scene& env, const double landing_speed, const doub
                 perceived_height_flag=false;
             std::cout << "waiting to land: " <<  avg << std::endl;
         }
+        env.moveDrone(utils::Vector{0,0,0});
     }
 
     while(perceived_height > 0.01)
