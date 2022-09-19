@@ -10,7 +10,7 @@ Drone::Drone(utils::Point pos) : pos(pos) {perceived_height=pos.z;};
 
 double average(const std::vector<double>& vec)
 {
-    return std::accumulate(vec.begin(), vec.end(), 0.0 / static_cast<double>(vec.size()));
+    return std::accumulate(vec.begin(), vec.end(), 0.0 )/ static_cast<double>(vec.size());
 }
 
 bool Longest(const std::vector<double> &A, const std::vector<double> &B)
@@ -39,6 +39,22 @@ void Drone::drone_land(scene::Scene& env, const double landing_speed, const doub
     // double remaining_height = pos.z;  // dead reckoning
     // double perceived_height = pos.z;  // EKF like value
     double target_landing_speed = landing_speed;
+
+    bool perceived_height_flag=true;
+    std::vector<double> last_heights;
+    while(perceived_height_flag)
+    {
+        fuse_height(env, 0);
+        last_heights.push_back(perceived_height);
+        if(last_heights.size() > 3)
+        {
+            last_heights.erase(last_heights.begin());
+            double avg = average(last_heights);
+            if(std::abs(perceived_height - avg) < 0.1)
+                perceived_height_flag=false;
+            std::cout << "waiting to land: " <<  avg << std::endl;
+        }
+    }
 
     while(perceived_height > 0.01)
     {
